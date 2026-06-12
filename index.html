@@ -607,6 +607,56 @@
         nav.classList.toggle('scrolled', window.scrollY > 50);
     });
 
+    // ========== 补丁1：修复播放器在首页消失 ==========
+(function ensurePlayerOnSwitch() {
+    let playerObserver = null;
+    function restorePlayerIfNeeded() {
+        // 检查播放器是否存在（meting-js 会生成 .aplayer 元素）
+        if (!document.querySelector('.aplayer') && document.querySelector('meting-js')) {
+            // 强制重新触发 Meting.js 解析
+            const metingEl = document.querySelector('meting-js');
+            if (typeof Meting !== 'undefined') {
+                new Meting(metingEl);
+            } else if (window.Meting) {
+                new window.Meting(metingEl);
+            }
+        }
+    }
+    // 监听页面切换（导航栏点击）
+    const originalNavClickHandler = null; // 不覆盖原有逻辑，只是额外增加
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.addEventListener('click', function() {
+            setTimeout(restorePlayerIfNeeded, 80);
+        });
+    });
+    // 首次加载也检查一次
+    window.addEventListener('load', restorePlayerIfNeeded);
+})();
+
+// ========== 补丁2：修复 Links 侧边栏在首页无效 ==========
+(function fixToolsSidebar() {
+    const toolsBtn = document.querySelector('[data-target="tools"]');
+    const sidebar = document.getElementById('toolsSidebar');
+    if (!toolsBtn || !sidebar) return;
+    // 移除原有可能会冲突的监听器（不清除原有，只增加捕获阶段监听）
+    // 新增捕获阶段监听，确保不被樱花脚本的 stopPropagation 影响
+    toolsBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();  // 防止意外冒泡
+        sidebar.classList.toggle('sidebar-visible');
+    }, true);  // 捕获模式关键
+    // 同样，关闭侧边栏的全局监听也使用捕获模式
+    document.addEventListener('click', function(e) {
+        if (sidebar.classList.contains('sidebar-visible')) {
+            const isInside = sidebar.contains(e.target);
+            const isBtn = e.target.closest('[data-target="tools"]');
+            if (!isInside && !isBtn) {
+                sidebar.classList.remove('sidebar-visible');
+            }
+        }
+    }, true);
+})();
+
 </script>
 </body>
 </html>
