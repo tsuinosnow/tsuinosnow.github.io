@@ -360,6 +360,10 @@
                 border-radius: 0;
                 padding: 15px;
             }
+            /* 新增：确保移动端打开侧边栏时 right 生效 */
+            .tools-sidebar.sidebar-visible {
+                right: 0;
+            }
 
             /* 个人名片 */
             .profile-container { flex-direction: column; min-height: 70vh; }
